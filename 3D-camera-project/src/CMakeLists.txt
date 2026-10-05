@@ -10,4 +10,6 @@
 idf_component_register(
     SRCS
         "main.cpp"
+        "buttons.cpp"
+        
 )

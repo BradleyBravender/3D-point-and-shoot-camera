@@ -1,23 +1,23 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/timers.h"
-#include "driver/adc.h"
-#include "driver/gpio.h"
-#include "esp_log.h"
-#include "esp_err.h"
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/queue.h"
+// #include "freertos/timers.h"
+// #include "driver/adc.h"
+// #include "driver/gpio.h"
+// #include "esp_log.h"
+// #include "esp_err.h"
 
 // ----- Config -----
-#define ADC_GPIO            GPIO_NUM_34      // ADC1_CH6
-#define ADC_CHANNEL         ADC1_CHANNEL_6
-#define ADC_ATTEN           ADC_ATTEN_DB_12  // For full-scale ~3.3V
-#define ADC_WIDTH           ADC_WIDTH_BIT_12
+// #define ADC_GPIO            GPIO_NUM_34      // ADC1_CH6
+// #define ADC_CHANNEL         ADC1_CHANNEL_6
+// #define ADC_ATTEN           ADC_ATTEN_DB_12  // For full-scale ~3.3V
+// #define ADC_WIDTH           ADC_WIDTH_BIT_12
 
-#define LED_GPIO            GPIO_NUM_2
+// #define LED_GPIO            GPIO_NUM_2
 
-#define ADC_TIMER_PERIOD_MS 1000             // ADC sample every 1000 ms
+// #define ADC_TIMER_PERIOD_MS 1000             // ADC sample every 1000 ms
 #define QUEUE_LENGTH        10
 
 // Task stack sizes and priorities
@@ -39,11 +39,11 @@ static TimerHandle_t adcTimer      = NULL;
 static const char *TAG = "multitask_demo";
 
 // ----- Prototypes -----
-static void adc_init(void);
-static void adcTask(void *pvParameters);
-static void commTask(void *pvParameters);
-static void ledTask(void *pvParameters);
-static void adcTimerCallback(TimerHandle_t xTimer);
+// static void adc_init(void);
+// static void adcTask(void *pvParameters);
+// static void commTask(void *pvParameters);
+// static void ledTask(void *pvParameters);
+// static void adcTimerCallback(TimerHandle_t xTimer);
 
 // ----- Implementation -----
 

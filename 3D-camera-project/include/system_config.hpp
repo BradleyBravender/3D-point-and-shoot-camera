@@ -5,10 +5,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <freertos/FreeRTOS.h>      
-#include <freertos/task.h>          
-#include <esp_adc/adc_oneshot.h>    
-#include <esp_log.h>                
-#include "sdkconfig.h"        
+#include <freertos/task.h>           
+#include "freertos/queue.h"
+#include "freertos/timers.h"  
+
+#include <esp_adc/adc_oneshot.h> 
+#include <esp_log.h>
+#include <esp_err.h>
+
+#include "sdkconfig.h"  
 
 ///////////////////////////////////////////////////////////////////////////////
 // PIN CONFIGS
@@ -22,15 +27,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // TYPES
 ///////////////////////////////////////////////////////////////////////////////
-
-// The ADC counts for each button were determined empirically
-enum class button_t {
-    EVT_BUTTON_SCROLL_D = 0,
-    EVT_BUTTON_SCROLL_U = 1780,
-    EVT_BUTTON_BACK = 2430,
-    EVT_BUTTON_SELECT = 2770,
-    EVT_NO_BUTTON_PRESSED = 4095
-};
 
 enum class state_t {
     STATE_SHOOT_OPTION,
