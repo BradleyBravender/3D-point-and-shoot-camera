@@ -54,6 +54,10 @@ static QueueHandle_t adcDataQueue   = NULL;
 static const char* TAG = "MainModule";
 
 ///////////////////////////////////////////////////////////////////////////////
+// PROTOTYPES
+///////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////
 // TASKS
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -63,6 +67,11 @@ static void adcTask(void *) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         button_t buttonEvt = getPressedButton();
+
+        // Don't push no button pressed events to the queue
+        if (buttonEvt == button_t::EVT_NO_BUTTON_PRESSED) {
+            continue;
+        }
 
         ESP_LOGI(TAG, "Button pressed: %d", buttonEvt);
 
@@ -80,13 +89,13 @@ static void adcTask(void *) {
 
 static void stateMachineTask(void *) {
     button_t buttonEvt;
+    state_t currentState = state_t::STATE_SHOOT_OPTION; 
     
     while (1) {
-        if (xQueueReceive(adcDataQueue, &buttonEvt, pdMS_TO_TICKS(10)) != pdPASS) {
-                // ESP_LOGW(TAG, "ADC queue empty.");
-            }
+        if (xQueueReceive(adcDataQueue, &buttonEvt, pdMS_TO_TICKS(10)) == pdPASS) {
 
-        const char *buttonType = "123456789";
+        /* 
+        const char *buttonType = "Unknown";
         
         switch (buttonEvt) {
             case button_t::EVT_BUTTON_SCROLL_D:
@@ -107,12 +116,48 @@ static void stateMachineTask(void *) {
         }
         
         ESP_LOGI(TAG, "Received: %s", buttonType);
+        */
+
+            switch (currentState) {
+                case (state_t::STATE_SHOOT_OPTION):
+                    currentState = stateShootOption(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_TAKE_PHOTO):
+                    currentState = stateTakePhoto(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_SHARE_OPTION):
+                    currentState = stateShareOption(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_SHARE):
+                    currentState = stateShare(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_SETTINGS_OPTION):
+                    currentState = stateSettingsOption(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_REVIEW_OPTION):
+                    currentState = stateReviewOption(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_DISPLAY_PAST_PHOTO):
+                    currentState = stateDisplayPastPhoto(buttonEvt);
+                    break;
+                
+                case (state_t::STATE_DELETE_PHOTO):
+                    currentState = stateDeletePhoto(buttonEvt);
+                    break;
+            } 
+        }
     }
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// NON-TASK FUNCTIONS
+// HELPER FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
 static void adcTimerCallback(TimerHandle_t xTimer) {
@@ -122,6 +167,49 @@ static void adcTimerCallback(TimerHandle_t xTimer) {
     }
 }
 
+
+static state_t stateShootOption(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateTakePhoto(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateShareOption(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateShare(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateSettingsOption(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateReviewOption(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateDisplayPastPhoto(button_t buttonEvt) {
+    // TODO
+}
+
+
+static state_t stateDeletePhoto(button_t buttonEvt) {
+    // TODO
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ENTRY-POINT
+///////////////////////////////////////////////////////////////////////////////
 
 extern "C" void app_main(void) {
     buttonsInit();
