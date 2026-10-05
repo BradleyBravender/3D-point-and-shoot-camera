@@ -57,6 +57,20 @@ static const char* TAG = "MainModule";
 // PROTOTYPES
 ///////////////////////////////////////////////////////////////////////////////
 
+static void adcTask(void *);
+static void stateMachineTask(void *);
+static void adcTimerCallback(TimerHandle_t xTimer);
+static state_t stateShootOption(button_t buttonEvt);
+static state_t stateTakePhoto(button_t buttonEvt);
+static state_t stateShareOption(button_t buttonEvt);
+static state_t stateShare(button_t buttonEvt);
+static state_t stateSettingsOption(button_t buttonEvt);
+static state_t stateReviewOption(button_t buttonEvt);
+static state_t stateDisplayPastPhoto(button_t buttonEvt);
+static state_t stateDeletePhoto(button_t buttonEvt);
+static const char* stateToString(state_t s);
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // TASKS
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,14 +87,14 @@ static void adcTask(void *) {
             continue;
         }
 
-        ESP_LOGI(TAG, "Button pressed: %d", buttonEvt);
+        // ESP_LOGI(TAG, "Button pressed: %d", buttonEvt);
 
         if (adcDataQueue != NULL) {
             /* From https://www.freertos.org/Documentation/02-Kernel/04-API-references/06-Queues/03-xQueueSend:
             queue handle, pointer to item placed on queue, max time to wait for
             queue to become available before dropping a sample */
             if (xQueueSend(adcDataQueue, &buttonEvt, pdMS_TO_TICKS(10)) != pdPASS) {
-                // ESP_LOGW(TAG, "ADC queue full. Dropping sample %d", buttonEvt);
+                ESP_LOGW(TAG, "ADC queue full. Dropping sample %d", buttonEvt);
             }
         }
     }
@@ -90,49 +104,28 @@ static void adcTask(void *) {
 static void stateMachineTask(void *) {
     button_t buttonEvt;
     state_t currentState = state_t::STATE_SHOOT_OPTION; 
-    
+
     while (1) {
+        ESP_LOGI(TAG, "Current state: %s", stateToString(currentState));
+        
         if (xQueueReceive(adcDataQueue, &buttonEvt, pdMS_TO_TICKS(10)) == pdPASS) {
-
-        /* 
-        const char *buttonType = "Unknown";
-        
-        switch (buttonEvt) {
-            case button_t::EVT_BUTTON_SCROLL_D:
-                buttonType = "Scroll D";
-                break;
-            case button_t::EVT_BUTTON_SCROLL_U:
-                buttonType = "Scroll U";
-                break;
-            case button_t::EVT_BUTTON_BACK:
-                buttonType = "Back";
-                break;
-            case button_t::EVT_BUTTON_SELECT:
-                buttonType = "Select";
-                break;
-            case button_t::EVT_NO_BUTTON_PRESSED:
-                buttonType = "No Press";
-                break;
-        }
-        
-        ESP_LOGI(TAG, "Received: %s", buttonType);
-        */
-
             switch (currentState) {
                 case (state_t::STATE_SHOOT_OPTION):
                     currentState = stateShootOption(buttonEvt);
-                    break;
-                
-                case (state_t::STATE_TAKE_PHOTO):
-                    currentState = stateTakePhoto(buttonEvt);
+
+                    if (currentState == state_t::STATE_TAKE_PHOTO) {
+                        ESP_LOGI(TAG, "Current state: %s", stateToString(currentState));
+                        currentState = stateTakePhoto(buttonEvt);
+                    }
                     break;
                 
                 case (state_t::STATE_SHARE_OPTION):
                     currentState = stateShareOption(buttonEvt);
-                    break;
-                
-                case (state_t::STATE_SHARE):
-                    currentState = stateShare(buttonEvt);
+
+                    if (currentState == state_t::STATE_SHARE) {
+                        ESP_LOGI(TAG, "Current state: %s", stateToString(currentState));
+                        currentState = stateShare(buttonEvt);
+                    }
                     break;
                 
                 case (state_t::STATE_SETTINGS_OPTION):
@@ -145,10 +138,16 @@ static void stateMachineTask(void *) {
                 
                 case (state_t::STATE_DISPLAY_PAST_PHOTO):
                     currentState = stateDisplayPastPhoto(buttonEvt);
+
+                    if (currentState == state_t::STATE_DELETE_PHOTO) {
+                        ESP_LOGI(TAG, "Current state: %s", stateToString(currentState));
+                        currentState = stateDeletePhoto(buttonEvt);
+                    }
                     break;
-                
-                case (state_t::STATE_DELETE_PHOTO):
-                    currentState = stateDeletePhoto(buttonEvt);
+
+                default:
+                    ESP_LOGW(TAG, "Unhandled state: %s", stateToString(currentState));
+                    currentState = state_t::STATE_SHOOT_OPTION;
                     break;
             } 
         }
@@ -169,42 +168,138 @@ static void adcTimerCallback(TimerHandle_t xTimer) {
 
 
 static state_t stateShootOption(button_t buttonEvt) {
-    // TODO
+    switch (buttonEvt) {
+        case (button_t::EVT_BUTTON_SCROLL_D):
+            return state_t::STATE_REVIEW_OPTION;
+        
+        case (button_t::EVT_BUTTON_SCROLL_U):
+            return state_t::STATE_SHARE_OPTION;
+        
+        case (button_t::EVT_BUTTON_BACK):
+            return state_t::STATE_SHOOT_OPTION;
+        
+        case (button_t::EVT_BUTTON_SELECT):
+            return state_t::STATE_TAKE_PHOTO;
+
+        default:
+            return state_t::STATE_SHOOT_OPTION;
+    }
 }
 
 
 static state_t stateTakePhoto(button_t buttonEvt) {
-    // TODO
+    // TODO: take photo
+    return state_t::STATE_SHOOT_OPTION;
 }
 
 
 static state_t stateShareOption(button_t buttonEvt) {
-    // TODO
+    switch (buttonEvt) {
+        case (button_t::EVT_BUTTON_SCROLL_D):
+            return state_t::STATE_SHOOT_OPTION;
+        
+        case (button_t::EVT_BUTTON_SCROLL_U):
+            return state_t::STATE_SETTINGS_OPTION;
+        
+        case (button_t::EVT_BUTTON_BACK):
+            return state_t::STATE_SHARE_OPTION;
+        
+        case (button_t::EVT_BUTTON_SELECT):
+            return state_t::STATE_SHARE;
+            break;
+
+        default:
+            return state_t::STATE_SHARE_OPTION;
+    }
 }
 
 
 static state_t stateShare(button_t buttonEvt) {
-    // TODO
+    // TODO: share photos. Add a way to cancel sharing asynchronously
+    return state_t::STATE_SHARE_OPTION;
 }
 
 
 static state_t stateSettingsOption(button_t buttonEvt) {
-    // TODO
+    switch (buttonEvt) {
+        case (button_t::EVT_BUTTON_SCROLL_D):
+            return state_t::STATE_SHARE_OPTION;
+        
+        case (button_t::EVT_BUTTON_SCROLL_U):
+            return state_t::STATE_REVIEW_OPTION;
+        
+        case (button_t::EVT_BUTTON_BACK):
+            return state_t::STATE_SETTINGS_OPTION;
+        
+        case (button_t::EVT_BUTTON_SELECT):
+            // TODO: add a settings option
+            return state_t::STATE_SETTINGS_OPTION;
+
+        default:
+            return state_t::STATE_SETTINGS_OPTION;
+    }
 }
 
 
 static state_t stateReviewOption(button_t buttonEvt) {
-    // TODO
+    switch (buttonEvt) {
+        case (button_t::EVT_BUTTON_SCROLL_D):
+            return state_t::STATE_SETTINGS_OPTION;
+        
+        case (button_t::EVT_BUTTON_SCROLL_U):
+            return state_t::STATE_SHOOT_OPTION;
+        
+        case (button_t::EVT_BUTTON_BACK):
+            return state_t::STATE_REVIEW_OPTION;
+        
+        case (button_t::EVT_BUTTON_SELECT):
+            return state_t::STATE_DISPLAY_PAST_PHOTO;
+
+        default:
+            return state_t::STATE_REVIEW_OPTION;
+    }
 }
 
 
 static state_t stateDisplayPastPhoto(button_t buttonEvt) {
-    // TODO
+    switch (buttonEvt) {
+        case (button_t::EVT_BUTTON_SCROLL_D):
+            // TODO: scroll down
+        
+        case (button_t::EVT_BUTTON_SCROLL_U):
+        // TODO: scroll up
+            return state_t::STATE_DISPLAY_PAST_PHOTO;
+        
+        case (button_t::EVT_BUTTON_BACK):
+            return state_t::STATE_REVIEW_OPTION;
+        
+        case (button_t::EVT_BUTTON_SELECT):
+            return state_t::STATE_DELETE_PHOTO;
+
+        default:
+            return state_t::STATE_DISPLAY_PAST_PHOTO;
+    }
 }
 
 
 static state_t stateDeletePhoto(button_t buttonEvt) {
-    // TODO
+    // TODO: delete current photo
+    return state_t::STATE_DISPLAY_PAST_PHOTO;
+}
+
+
+static const char* stateToString(state_t s) {
+    switch (s) {
+        case state_t::STATE_SHOOT_OPTION: return "STATE_SHOOT_OPTION";
+        case state_t::STATE_TAKE_PHOTO: return "STATE_TAKE_PHOTO";
+        case state_t::STATE_SHARE_OPTION: return "STATE_SHARE_OPTION";
+        case state_t::STATE_SHARE: return "STATE_SHARE";
+        case state_t::STATE_SETTINGS_OPTION: return "STATE_SETTINGS_OPTION";
+        case state_t::STATE_REVIEW_OPTION: return "STATE_REVIEW_OPTION";
+        case state_t::STATE_DISPLAY_PAST_PHOTO: return "STATE_DISPLAY_PAST_PHOTO";
+        case state_t::STATE_DELETE_PHOTO: return "STATE_DELETE_PHOTO";
+        default: return "UNKNOWN";
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
