@@ -9,15 +9,6 @@ The tasks are as follows:
     * Because the input is an ADC, implement polling
 * Managing state transitions and dispatching accordingly
     * Based on the most recent button press, 
-
-Introduction example:
-* If button 1 is pressed), go from menu to share
-* If if button 2 is pressed, go from share to menu
- ________       ________
-|        |____>|        |
-| menu   |<____| share  |
-|________|     |________|
-
 */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,17 +67,33 @@ static const char* stateToString(state_t s);
 ///////////////////////////////////////////////////////////////////////////////
 
 static void adcTask(void *) {
+    bool isButtonPressed = false;
+    button_t rawButtonEvt;
+    button_t buttonEvt = button_t::EVT_NO_BUTTON_PRESSED;
+    
     while (1) {
         // Wait for a notification from the timer (blocks indefinitely)
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        button_t buttonEvt = getPressedButton();
+        rawButtonEvt = getPressedButton();
 
-        // Don't push no button pressed events to the queue
-        if (buttonEvt == button_t::EVT_NO_BUTTON_PRESSED) {
+        // To debounce, don't register a button until its been released
+        if (rawButtonEvt != button_t::EVT_NO_BUTTON_PRESSED) {
+            isButtonPressed = true;
+            buttonEvt = rawButtonEvt;
+            continue;
+        } 
+        
+        /* In the event that no button was registered as being pressed and then
+        released, there will be no button events to add to the queue */
+        if (!isButtonPressed) {
             continue;
         }
 
+        /* Here, we know that a button has been pressed, released, but not yet
+        added to the queue */
+        isButtonPressed = false;
+         
         // ESP_LOGI(TAG, "Button pressed: %d", buttonEvt);
 
         if (adcDataQueue != NULL) {
@@ -97,6 +104,7 @@ static void adcTask(void *) {
                 ESP_LOGW(TAG, "ADC queue full. Dropping sample %d", buttonEvt);
             }
         }
+
     }
 }
 
