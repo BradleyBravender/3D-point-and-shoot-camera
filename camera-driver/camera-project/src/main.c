@@ -7,7 +7,7 @@
 // 1. Board setup (Uncomment):
 // #define BOARD_WROVER_KIT
 // #define BOARD_ESP32CAM_AITHINKER
-// #define BOARD_ESP32S3_WROOM
+#define BOARD_ESP32S3_WROOM
 // #define BOARD_ESP32S3_XIAO
 // #define BOARD_ESP32S3_GOOUUU
 // #define BOARD_ESP32S3_XIAO
@@ -54,8 +54,6 @@
 #if defined(CONFIG_CAMERA_AF_SUPPORT) && CONFIG_CAMERA_AF_SUPPORT
 #include "esp_camera_af.h"
 #endif
-
-#define BOARD_WROVER_KIT 1
 
 #include "camera_pinout.h"
 
